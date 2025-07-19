@@ -1,7 +1,10 @@
 from flask import Flask, render_template, request, redirect
 from flask_sqlalchemy import SQLAlchemy
+from flasgger import Swagger  # 変更点
 
 app = Flask(__name__)
+swagger = Swagger(app)  # 変更点
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///todo.db'
 db = SQLAlchemy(app)
 
@@ -16,6 +19,32 @@ with app.app_context():
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
+    """
+    ToDoのリスト表示と新規作成
+    ---
+    get:
+      summary: ToDoリストのページを取得
+      description: 全てのToDoタスクを含むHTMLページを返します。
+      responses:
+        200:
+          description: 成功。ToDoリストが描画されたHTMLページ。
+    post:
+      summary: 新しいToDoを追加
+      description: フォームデータから新しいタスクを作成します。
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                task:
+                  type: string
+                  description: 新しいタスクの内容
+      responses:
+        302:
+          description: 作成成功後、トップページにリダイレクトします。
+    """
     if request.method == 'POST':
         task = request.form.get('task')
         if task:
@@ -28,6 +57,23 @@ def home():
 
 @app.route('/delete/<int:id>')
 def delete(id):
+    """
+    指定されたIDのToDoを削除
+    ---
+    get:
+      summary: ToDoを削除
+      description: 指定されたIDのToDoタスクをデータベースから削除します。
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 削除するToDoのID
+          schema:
+            type: integer
+      responses:
+        302:
+          description: 削除成功後、トップページにリダイレクトします。
+    """
     todo = Todo.query.get(id)
     if todo:
         db.session.delete(todo)
